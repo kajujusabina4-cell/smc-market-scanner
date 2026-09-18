@@ -24,8 +24,7 @@ concurrency:
         default: '60'
         type: string
       max_instruments:
-        description: Fast scan covers the configured universe; all 20 FX pairs compete in the deep TOP-5 ranking; XAU/USD
-          and BTC/USD remain outside the FX-only ranking
+        description: Fast scan covers 20 FX pairs plus XAU/USD and BTC/USD; all configured symbols compete in the deep TOP-5 ranking
         required: false
         default: '0'
         type: string
@@ -215,7 +214,7 @@ jobs:
         : 74.0,\n    \"CURRENCY_STRENGTH\": 76.0,\n    \"ADVANCED_CONFLUENCE\": 86.0,\n\n}\nMIN_DATA_QUALITY = 0.95\nPOTENTIAL_SCORE_MIN\
         \ = 55.0\nFORMING_CANDLE_MIN_BODY_RATIO = 0.30\nMIN_CONFIRMED_RR = 2.0\n# Strict Top Opportunity quality gates for\
         \ XAU/USD, EUR/USD and BTC/USD.\nTOP_OPPORTUNITY_MIN_DEEP_SCORE = 85.0\nTOP_OPPORTUNITY_MIN_EXECUTION_QUALITY = 85.0\n\
-        TOP_OPPORTUNITY_MIN_STRATEGIES = 3\nTOP_OPPORTUNITY_MIN_RR = 2.0\n# TP is always a genuine structural target. Report\
+        TOP_OPPORTUNITY_MIN_STRATEGIES = 1\nTOP_OPPORTUNITY_MIN_RR = 2.0\n# TP is always a genuine structural target. Report\
         \ actual R:R (1:2, 1:3, 1:5, 1:20, etc.).\n# Never fabricate or stretch a TP to force a ratio.\nMIN_TARGET_PIPS =\
         \ 300.0\nPAIR_REPLACEMENT_ENGINE_ACTIVE = True\nEARLY_ENTRY_MINUTES = 3.0\nENTRY_BUFFER_ATR = 0.16\nENTRY_MAX_CHASE_ATR\
         \ = 0.85\nREQUIRE_RETRACEMENT_FOR_CONFIRMED = True\nRETRACEMENT_LOOKBACK = 60\nTRIGGER_SWING_LOOKBACK = 2\nTRIGGER_SWING_WINDOW\
@@ -226,14 +225,10 @@ jobs:
         \ = True\nREVERSAL_MIN_HTF_CONFIRMATIONS = 2\nREVERSAL_MIN_EXECUTION_CONFIRMATIONS = 2\nREVERSAL_SCORE_BONUS = 0.0\n\
         REVERSAL_MAX_TRANSITION_OPPOSITION = 1\nREQUIRE_EXECUTABLE_RR_RECHECK = True\nEXECUTION_HIGH_QUALITY_SCORE = max(EXECUTION_SCORE_MIN,\
         \ min(99.0, EXECUTION_HIGH_QUALITY_SCORE))\nprint(f\"EXECUTION CALIBRATION: min_confirmed={EXECUTION_SCORE_MIN:.1f}\
-        \ high_quality={EXECUTION_HIGH_QUALITY_SCORE:.1f} source={EXECUTION_CALIBRATION_SOURCE}\")\nACTIVE_STRATEGY_NAME =\
-        \ \"9_STRATEGY_CONSENSUS\"\nINSTITUTIONAL_ENGINE_ACTIVE = True\n# ADAPTIVE INSTITUTIONAL DECISION ENGINE\nADAPTIVE_ENGINE_ACTIVE\
-        \ = True\nADAPTIVE_BASE_SCORE_FLOOR = 70.0\nADAPTIVE_MAX_SCORE_FLOOR = 88.0\nADAPTIVE_BASE_STRATEGIES = 2\nADAPTIVE_MAX_STRATEGIES\
-        \ = 4\nADAPTIVE_MIN_TREND_EFFICIENCY = 0.42\nADAPTIVE_RANGE_EFFICIENCY = 0.25\nADAPTIVE_EXTREME_VOL_PERCENTILE = 85.0\n\
+        \ high_quality={EXECUTION_HIGH_QUALITY_SCORE:.1f} source={EXECUTION_CALIBRATION_SOURCE}\")\nACTIVE_STRATEGY_NAME = \"INSTITUTIONAL_SMC\"\nINSTITUTIONAL_ENGINE_ACTIVE = True\n# ADAPTIVE INSTITUTIONAL DECISION ENGINE\nADAPTIVE_ENGINE_ACTIVE\
+        \ = True\nADAPTIVE_BASE_SCORE_FLOOR = 70.0\nADAPTIVE_MAX_SCORE_FLOOR = 88.0\nADAPTIVE_BASE_STRATEGIES = 1\nADAPTIVE_MAX_STRATEGIES = 1\nADAPTIVE_MIN_TREND_EFFICIENCY = 0.42\nADAPTIVE_RANGE_EFFICIENCY = 0.25\nADAPTIVE_EXTREME_VOL_PERCENTILE = 85.0\n\
         ADAPTIVE_LOW_VOL_PERCENTILE = 15.0\nADAPTIVE_MIN_SIGNAL_STABILITY = 0.55\nADAPTIVE_ENGINE_VERSION = \"AIDE-1.0\"\n\
-        STRATEGY_ENGINE_STATUS = \"BUILT_IN_9_STRATEGY\"\nSTRATEGY_ENGINE_REASON = \"nine directional strategy modules vote\
-        \ independently by timeframe; confirmation requires at least 2 distinct strategies plus monthly/context/execution/risk\
-        \ gates\"\nprint(\n    f\"PRODUCTION STRATEGY: {ACTIVE_STRATEGY_NAME} | \"\n    f\"status={STRATEGY_ENGINE_STATUS}\
+        STRATEGY_ENGINE_STATUS = \"BUILT_IN\"\nSTRATEGY_ENGINE_REASON = \"institutional SMC/liquidity-structure engine is the sole production strategy; other modules are supporting evidence; confirmation requires SMC plus monthly/context/execution/risk gates\"\nprint(\n    f\"PRODUCTION STRATEGY: {ACTIVE_STRATEGY_NAME} | \"\n    f\"status={STRATEGY_ENGINE_STATUS}\
         \ | {STRATEGY_ENGINE_REASON}\"\n)\nEXECUTION_STREAM_BATCH = 10\nASSET_ENVIRONMENTS = {\n    \"XAU/USD\": {\n     \
         \   \"name\": \"XAU_GOLD_LIQUIDITY_ENV\",\n        \"scan_mode\": \"SELECTIVE_SMC_LIQUIDITY\",\n        \"quote_max_age\"\
         : 3.0,\n        \"max_spread_atr\": 0.70,\n        \"max_spread_median\": 4.0,\n        \"micro_move_max_atr\": 0.26,\n\
@@ -877,7 +872,7 @@ jobs:
         \ in m:\n        by_name.setdefault(x.get(\"name\"),[]).append(x)\n    names=sorted([n for n in by_name if n])\n \
         \   tfs=sorted(set(x.get(\"timeframe\") for x in m if x.get(\"timeframe\")))\n    best=max([float(x.get(\"score\"\
         ,0) or 0) for x in m],default=0.0)\n    breadth=min(30.0,max(0.0,(len(names)-2)*8.0))\n    tf_bonus=min(20.0,max(0.0,(len(tfs)-1)*5.0))\n\
-        \    score=min(100.0,45.0+len(names)*8.0+breadth+tf_bonus) if names else 0.0\n    confirmed=len(names)>=MIN_CONFIRMED_STRATEGIES\n\
+        \    score=min(100.0,45.0+len(names)*8.0+breadth+tf_bonus) if names else 0.0\n    confirmed=any(str(n).upper() == \"SMC\" or str(n).upper().startswith(\"SMC_\") for n in names)\n\
         \    tier=\"A\" if len(names)>=S_TIER_MIN_STRATEGIES and score>=85 else (\"B\" if confirmed else \"C\")\n    return\
         \ {\"confirmed\":confirmed,\"count\":len(names),\"strategies\":names,\"categories\":names,\n            \"tier\":tier,\"\
         score\":round(score,1),\"best\":max(m,key=lambda x:float(x.get(\"score\",0) or 0)) if m else None,\n            \"\
@@ -1551,9 +1546,8 @@ jobs:
         aligned_count\"]\n        opposed_count = cs[\"opposed_count\"]\n        strat = strategy_by_side[c]\n        blockers\
         \ = []\n        smc_base_confirmed = any(\n            str(x).upper().replace(\"-\", \"_\").replace(\" \", \"_\")\
         \ == \"SMC\"\n            or str(x).upper().startswith(\"SMC_\")\n            for x in strat.get(\"strategies\", [])\n\
-        \        )\n        strategy_confirmed = strat[\"confirmed\"] and smc_base_confirmed\n        strategy_count = strat[\"\
-        count\"]\n        active_match = next((m for m in strategy_by_tf.get(position_tf, []) if m.get(\"signal\")==c), None)\n\
-        \        strategy_category = \"9_STRATEGY_CONSENSUS\"\n        strategy_tier = strat[\"tier\"]\n        one_strategy_confirmed\
+        \        )\n        strategy_confirmed = bool(smc_base_confirmed)\n        strategy_count = 1 if smc_base_confirmed else 0\n        active_match = next((m for m in strategy_by_tf.get(position_tf, []) if m.get(\"signal\")==c), None)\n\
+        \        strategy_category = \"INSTITUTIONAL_SMC\"\n        strategy_tier = strat[\"tier\"]\n        one_strategy_confirmed\
         \ = bool(INSTITUTIONAL_ENGINE_ACTIVE and strategy_confirmed)\n        agreeing_signal_tfs = signal_timeframes(c)\n\
         \        monthly_gate = (monthly_side == c) if REQUIRE_MONTHLY_ALIGNMENT else True\n        timeframe_gate = bool(agreeing_signal_tfs)\n\
         \        lse_alignment_gate = timeframe_gate\n        three_price = False\n        level_map = {\n            \"INTRADAY\"\
@@ -1724,7 +1718,7 @@ jobs:
         \ not confirmed\")\n        if three_price:\n            reasons.append(f\"PRICE-MOVEMENT: {cs['price_count']} distinct\
         \ methods across {cs['price_tf_count']} timeframes\")\n        if opposed_count:\n            reasons.append(f\"OPPOSITION:\
         \ {opposed_count} distinct strategy method(s) opposed\")\n        if not strategy_confirmed or not INSTITUTIONAL_ENGINE_ACTIVE:\n\
-        \          blockers.append(f\"MISSING: at least {MIN_CONFIRMED_STRATEGIES} distinct strategies from the 9 must agree\"\
+        \          blockers.append(f\"MISSING: institutional SMC production strategy is not confirmed\"\
         )\n        if not adaptive_strategy_gate:\n            blockers.append(f\"ADAPTIVE REGIME GATE: {adaptive_state.get('regime')}\
         \ requires {adaptive_profile['required_strategies']} independent strategies; got {strategy_count}\")\n        if not\
         \ adaptive_opposition_gate:\n            blockers.append(f\"ADAPTIVE CONFLICT GATE: {opposed_count} opposing methods\
@@ -1766,7 +1760,7 @@ jobs:
         \             f\"EVENT CONTEXT STATE: {event_info.get('state')} | not a mandatory confirmation gate\"\n          \
         \  )\n        if qualifies and rr_ok_now:\n            entry_candidates.append({\n                \"status\": \"CONFIRMED_CANDIDATE\"\
         ,\n                \"setup_stage\": \"CONFIRMED_CANDIDATE\",\n                \"strategy\":selected_strategy,\n  \
-        \              \"validated_strategy\":\"9_STRATEGY_CONSENSUS\",\n                \"entry_category\":chosen_category,\n\
+        \              \"validated_strategy\":\"INSTITUTIONAL_SMC\",\n                \"entry_category\":chosen_category,\n\
         \                \"strategy_tier\":strategy_tier,\n                \"confirmed_strategy_count\":strategy_count if\
         \ one_strategy_confirmed else 0,\n                \"confirmed_strategies\":sorted(aligned_names) if one_strategy_confirmed\
         \ else [],\n                \"strategy_matches\":strat.get(\"all_matches\",[]),\n                \"side\":c,\n   \
@@ -1785,7 +1779,7 @@ jobs:
         \                \"reasons\":reasons,\n                \"execution_trigger\": trigger_state,\n                \"retracement_quality\"\
         : retracement_state,\n            })\n        elif qualifies:\n            setup_wait_candidates.append({\n      \
         \          \"status\": \"WAITING_FOR_TRIGGER\",\n                \"setup_stage\": \"SETUP_READY\",\n             \
-        \   \"strategy\":selected_strategy,\n                \"validated_strategy\":\"9_STRATEGY_CONSENSUS\",\n          \
+        \   \"strategy\":selected_strategy,\n                \"validated_strategy\":\"INSTITUTIONAL_SMC\",\n          \
         \      \"entry_category\":chosen_category,\n                \"strategy_tier\":strategy_tier,\n                \"confirmed_strategy_count\"\
         :strategy_count if one_strategy_confirmed else 0,\n                \"confirmed_strategies\":sorted(aligned_names)\
         \ if one_strategy_confirmed else [],\n                \"strategy_matches\":strat.get(\"all_matches\",[]),\n      \
@@ -1809,7 +1803,7 @@ jobs:
         \ R:R >= 2R. Never manufacture/extend TP.\n            if potential_plan is not None:\n                potential_candidates.append({\n\
         \                \"status\": f\"POTENTIAL_{c}\",\n                \"setup_stage\": \"SETUP_READY\" if consensus_score\
         \ >= 70 and aligned_count >= 2 else \"DEVELOPING\",\n                \"strategy\":selected_strategy,\n           \
-        \     \"validated_strategy\":\"9_STRATEGY_CONSENSUS\",\n                \"entry_category\":chosen_category,\n    \
+        \     \"validated_strategy\":\"INSTITUTIONAL_SMC\",\n                \"entry_category\":chosen_category,\n    \
         \            \"strategy_tier\":strategy_tier,\n                \"confirmed_strategy_count\":strategy_count if one_strategy_confirmed\
         \ else 0,\n                \"confirmed_strategies\":sorted(aligned_names) if one_strategy_confirmed else [],\n   \
         \             \"strategy_matches\":strat.get(\"all_matches\",[]),\n                \"side\":c,\n                \"\
@@ -1826,8 +1820,8 @@ jobs:
         )),\n                \"direction_state\": direction_state,\n                \"horizon\":horizon_for(selected_strategy),\n\
         \                \"reasons\":[\n                    (f\"POTENTIAL: strategy score {consensus_score:.1f}/100; final\
         \ execution gates still pending\"\n                     if potential_ready and aligned_count >= 2 else\n         \
-        \            f\"MISSING: {MIN_CONFIRMED_STRATEGIES}-of-9 strategy confirmation is not active\"\n                 \
-        \    if strategy_count < MIN_CONFIRMED_STRATEGIES else\n                     \"MISSING: 9-strategy consensus engine\
+        \            f\"MISSING: institutional SMC production confirmation is not active\"\n                 \
+        \    if strategy_count < MIN_CONFIRMED_STRATEGIES else\n                     \"MISSING: institutional SMC production engine\
         \ confirmation is not active\"),\n                    *( [f\"MISSING: entry trigger at {trigger_state.get('trigger_price'):.6g}\
         \ has not been crossed\"] if not trigger_crossed else [] ),\n                     *( [\"BLOCKED: trigger is overextended;\
         \ wait for a new closed-candle setup\"] if not trigger_safe else [] ),\n                    *( [f\"MISSING: R:R must\
@@ -1884,7 +1878,7 @@ jobs:
         \         float(max(buy_stats[\"aligned_count\"], sell_stats[\"aligned_count\"]) * 10.0)\n        )\n        if side\
         \ == \"NEUTRAL\":\n            blockers.append(\"single-engine BUY/SELL evidence is tied or neutral\")\n        else:\n\
         \            side_stats = buy_stats if side == \"BUY\" else sell_stats\n            if side_stats[\"aligned_count\"\
-        ] < 2:\n                blockers.append(f\"fewer than {MIN_CONFIRMED_STRATEGIES} distinct strategies currently agree\"\
+        ] < 2:\n                blockers.append(f\"institutional SMC production strategy is not confirmed\"\
         )\n            elif side_stats[\"price_count\"] < 3:\n                blockers.append(\"2-of-9 consensus exists but\
         \ context/execution gates are not complete\")\n            else:\n                blockers.append(\"consensus exists\
         \ but execution/risk conditions are not yet complete\")\n        if potential_candidates:\n            best = potential_candidates[0]\n\
@@ -2157,7 +2151,7 @@ jobs:
         \ | replacement={replacement_engine['replacement_selected'] or 'NONE'}\")\nentries = sorted([r for r in results if\
         \ r.get(\"status\") == \"CONFIRMED_ENTRY\" or str(r.get(\"status\", \"\")).startswith(\"CONFIRMED_\")],\n        \
         \         key=lambda x: (-x[\"strategy_score\"],))\n# Select up to five genuinely confirmed entries. Do not downgrade\
-        \ valid confirmations merely because\n# another pair ranked higher; all 20 FX pairs compete on the same fresh scan.\n\
+        \ valid confirmations merely because\n# another pair ranked higher; all configured symbols compete on the same fresh scan.\n\
         entries = entries[:MAX_CONFIRMED_ENTRIES_PER_SCAN]\nintraday_entries = sorted([r for r in entries if r[\"trade_type\"\
         ] == \"INTRADAY\"], key=lambda x: x[\"strategy_score\"], reverse=True)\nscalp_entries = sorted([r for r in entries\
         \ if r[\"trade_type\"] == \"SCALP\"], key=lambda x: x[\"strategy_score\"], reverse=True)\nswing_entries = sorted([r\
@@ -2365,7 +2359,7 @@ jobs:
         \ {RUNTIME_MINUTES*60:.1f}s\")\nprint(f\"Market-scan budget (with safety reserve): {SCAN_BUDGET_SECONDS:.1f}s\")\n\
         print(f\"Catalog instruments discovered: {len(catalog)}\")\nprint(f\"Eligible instruments selected: {len(instruments)}\"\
         )\nprint(f\"Full-universe FX pairs staged: {len(top_opportunity_candidates)} / {len(TOP_OPPORTUNITY_SYMBOLS)}\")\n\
-        print(\"Predictive preselection: DISABLED — all 20 FX pairs enter the same institutional engine\")\nprint(f\"Instruments\
+        print(\"Predictive preselection: DISABLED — all configured symbols enter the same institutional engine\")\nprint(f\"Instruments\
         \ deep-analyzed for TOP OPPORTUNITIES: {processed}\")\nprint(f\"TOP opportunity symbols available: {len(opportunity_symbols_found)}\
         \ / {len(TOP_OPPORTUNITY_SYMBOLS)}\")\nprint(\"Predictive fast filter: REMOVED — data-quality checks only\")\nprint(f\"\
         Fully analyzed: {complete}\")\nprint(f\"Skipped as incomplete: {incomplete}\")\nprint(f\"Completed analysis errors:\
@@ -2459,7 +2453,7 @@ jobs:
         \        \"final_min_interval_seconds\": API_MIN_INTERVAL_SECONDS,\n        \"cooldown_seconds\": API_429_COOLDOWN_SECONDS,\n\
         \        \"max_cooldown_seconds\": API_429_MAX_COOLDOWN_SECONDS,\n        \"policy\": \"global quota circuit breaker;\
         \ first provider 429 stops further candle REST requests for this run\"\n    },\n    \"score_definitions\": {\n   \
-        \     \"strategy_score\": \"0-100 breadth/quality score for the 9-strategy consensus; score never confirms an entry\
+        \     \"strategy_score\": \"0-100 evidence/quality score across supporting modules; score never confirms an entry by itself\
         \ by itself\",\n        \"monthly_alignment\": \"1MO is strategic context, not a permanent directional lock. Continuations\
         \ normally align to 1MO; tactical reversals may override it only after the dynamic-direction engine confirms multi-timeframe\
         \ evidence plus structural invalidation/flip. REVERSAL_WATCH never confirms an entry.\",\n        \"signal_timeframes\"\
@@ -2467,12 +2461,12 @@ jobs:
         \ must be directionally confirmed on the chosen timeframe and required context\",\n        \"execution_quality_score\"\
         : \"0-100 execution-condition quality; not a win probability and never a standalone entry confirmation. Conditional/non-executable\
         \ plans are capped below confirmed-entry quality.\",\n        \"score\": \"backward-compatible alias of strategy_score\"\
-        ,\n        \"status_rule\": \"CONFIRMED_ENTRY requires adaptive 9-strategy evidence, valid market state, structural\
+        ,\n        \"status_rule\": \"CONFIRMED_ENTRY requires institutional SMC production confirmation, valid market state, structural\
         \ SL/TP, >=2R at actual executable bid/ask, event/data/volatility/spread/chase gates and a fresh live trigger. Continuations\
         \ require strategic/context alignment; reversals may override the prior 1MO/4H direction only when the dynamic-direction\
         \ engine confirms the new side. Potential/watch states are never entries.\",\n        \"potential_rule\": \"POTENTIAL\
         \ is reference-only. It is never an order, never a win probability, and must be revalidated at the next closed candle\
-        \ before entry.\",\n        \"preselection\": \"Disabled; all 20 FX pairs receive the same deep institutional pipeline\
+        \ before entry.\",\n        \"preselection\": \"Disabled; all configured symbols receive the same deep institutional pipeline\
         \ before ranking.\",\n        \"institutional_execution_model\": \"Live LSE bid/ask ticks determine executable side,\
         \ quote freshness, spread cost, trigger crossing, chase distance, micro-price stability, arrival-price implementation\
         \ shortfall and a bounded execution score. This is top-of-book execution modelling, not full order-book/queue market-impact\
@@ -2489,7 +2483,7 @@ jobs:
         : REVERSAL_MIN_EXECUTION_CONFIRMATIONS,\n        \"require_actual_executable_rr_recheck\": REQUIRE_EXECUTABLE_RR_RECHECK,\n\
         \        \"manual_mt5_rule\": \"The scanner does not place MT5 orders. Manual execution must copy the confirmed executable\
         \ entry, SL and TP exactly; if any field differs or TP is blank, do not enter.\",\n    },\n    \"strategy_engine\"\
-        : {\n         \"name\": \"9_STRATEGY_CONSENSUS\",\n         \"status\": STRATEGY_ENGINE_STATUS,\n         \"reason\"\
+        : {\n         \"name\": \"INSTITUTIONAL_SMC\",\n         \"status\": STRATEGY_ENGINE_STATUS,\n         \"reason\"\
         : STRATEGY_ENGINE_REASON,\n         \"minimum_confirmed_strategies\": MIN_CONFIRMED_STRATEGIES,\n         \"required_for_confirmed_entry\"\
         : True\n    },\n}\noutput_path = os.getenv(\"SCANNER_JSON\", \"scan_results.json\")\nwith open(output_path, \"w\"\
         , encoding=\"utf-8\") as fh:\n    json.dump(payload, fh, ensure_ascii=False, default=str)\nprint(f\"JSON HANDOFF:\
